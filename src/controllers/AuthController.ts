@@ -5,20 +5,22 @@ import { validate } from "class-validator";
 
 import { User } from "../entity/User";
 import config from "../config/config";
+import { users } from "../entity/users";
+import { removeAtt } from "../util/object";
 
 class AuthController {
   static login = async (req: Request, res: Response) => {
     //Check if username and password are set
-    let { username, password } = req.body;
-    if (!(username && password)) {
+    let { phone, password } = req.body;
+    if (!(phone && password)) {
       res.status(400).send();
     }
 
     //Get user from database
-    const userRepository = getRepository(User);
-    let user: User;
+    const userRepository = getRepository(users);
+    let user: users;
     try {
-      user = await userRepository.findOneOrFail({ where: { username } });
+      user = await userRepository.findOneOrFail({ where: { phone } });
     } catch (error) {
       res.status(401).send();
     }
@@ -28,16 +30,17 @@ class AuthController {
       res.status(401).send();
       return;
     }
+    user = removeAtt(user, ["password"])
 
     //Sing JWT, valid for 1 hour
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { userId: user.id, phone: user.phone },
       config.jwtSecret,
       { expiresIn: "1h" }
     );
 
     //Send the jwt in the response
-    res.send(token);
+    res.send({ user, token });
   };
 
   static changePassword = async (req: Request, res: Response) => {

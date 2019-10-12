@@ -1,8 +1,10 @@
 {
-   "type": "sqlite",
-   "database": "database.sqlite",
+   "type": "mysql",
+   "database": "caronapp_bd",
    "synchronize": true,
-   "logging": false,
+   "username" : "root",
+   "password" : "12012012",
+   "logging": true,
    "entities": [
       "src/entity/**/*.ts"
    ],
