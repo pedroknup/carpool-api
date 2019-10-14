@@ -5,6 +5,7 @@ export interface IPendentUser {
   user: IUser;
   quantity: number;
   point: IPoint;
+  message?: string;
   createdAt: Date;
   id: number;
 }

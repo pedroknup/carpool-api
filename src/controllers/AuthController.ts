@@ -13,7 +13,7 @@ class AuthController {
     //Check if username and password are set
     let { phone, password } = req.body;
     if (!(phone && password)) {
-      res.status(400).send();
+      res.status(400).send("Bad request");
     }
 
     //Get user from database
@@ -21,13 +21,13 @@ class AuthController {
     let user: users;
     try {
       user = await userRepository.findOneOrFail({ where: { phone } });
-    } catch (error) {
-      res.status(401).send();
+    } catch (id) {
+      res.status(401).send("Usuário ou senha inválidos");
+      return;
     }
-
     //Check if encrypted password match
     if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-      res.status(401).send();
+      res.status(401).send('Usuário ou senha inválidos');
       return;
     }
     user = removeAtt(user, ['password']);
