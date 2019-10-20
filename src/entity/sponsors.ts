@@ -31,6 +31,12 @@ export class sponsors {
   })
   picture: string | null;
 
+  @Column('int', {
+    nullable: true,
+    name: 'order'
+  })
+  order: number | null;
+
   @Column('varchar', {
     nullable: true,
     length: 80,

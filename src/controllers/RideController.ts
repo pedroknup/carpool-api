@@ -55,7 +55,7 @@ class RideController {
     rideRoute.name = route.name;
     rideRoute.idUser = idUser;
     rideRoute.origin = route.origin;
-    rideRoute.idDestination = route.destination.id;
+    rideRoute.idDestination = route.idDestination;
     rideRoute.points = route.route;
     rideRoute.idRegion = regionId;
 

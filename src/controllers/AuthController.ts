@@ -37,7 +37,7 @@ class AuthController {
     const userRepository = getRepository(users);
     let user: users;
     try {
-      user = await userRepository.findOneOrFail({ where: { facebook_id: 123 }, relations: ['rides', 'routes'] });
+      user = await userRepository.findOneOrFail({ where: { facebook_id: 123 }, relations: ['rides', 'routes', 'routes.idDestination'] });
     } catch (id) {
       //not found
       // TODO: redirect to sign user up
@@ -60,6 +60,7 @@ class AuthController {
     let favRoutes = [];
     let rating = 4.6;
     // TODO calculate rating
+    console.log('user' + JSON.stringify(user.routes[0]));
     let newUserObj = { ...user, favPoints, favRoutes, rating };
     try {
       const arr = user.rides;
