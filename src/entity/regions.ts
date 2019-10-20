@@ -13,30 +13,23 @@ import {
   PrimaryGeneratedColumn,
   RelationId
 } from 'typeorm';
+import { provinces } from './provinces';
 import { destinations } from './destinations';
 import { rides } from './rides';
 import { routes } from './routes';
 import { sponsors } from './sponsors';
 import { types } from './types';
 import { universities } from './universities';
-import { provinces } from './provinces';
+import { points } from './points';
 
 @Entity('regions', { schema: 'caronapp_bd' })
-@Index('id_province', ['id_province'])
+@Index('region-province', ['idProvince'])
 export class regions {
   @PrimaryGeneratedColumn({
     type: 'int',
     name: 'id'
   })
   id: number;
-
-  @ManyToOne(() => provinces, (provinces: provinces) => provinces.id, {
-    nullable: false,
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION'
-  })
-  @JoinColumn({ name: 'id_province' })
-  province: provinces | null;
 
   @Column('varchar', {
     nullable: false,
@@ -54,41 +47,58 @@ export class regions {
 
   @Column('varchar', {
     nullable: true,
-    length: 45,
+    length: 155,
     name: 'image'
   })
   image: string | null;
 
-  @Column('int', {
-    nullable: true,
-    name: 'id_province'
+  @ManyToOne(() => provinces, (provinces: provinces) => provinces.regions, {
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION'
   })
-  id_province: number | null;
+  @JoinColumn({ name: 'id_province' })
+  idProvince: provinces | null;
+
+  @Column('varchar', {
+    nullable: true,
+    length: 100,
+    name: 'keywords'
+  })
+  keywords: string | null;
+
+  @Column('json', {
+    nullable: true,
+    name: 'times'
+  })
+  times: object | null;
 
   @OneToMany(() => destinations, (destinations: destinations) => destinations.idRegion, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION'
   })
-  destinationss: destinations[];
+  destinations: destinations[];
 
   @OneToMany(() => rides, (rides: rides) => rides.idRegion, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
-  ridess: rides[];
+  rides: rides[];
 
   @OneToMany(() => routes, (routes: routes) => routes.idRegion, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
-  routess: routes[];
+  routes: routes[];
 
   @OneToMany(() => sponsors, (sponsors: sponsors) => sponsors.idRegion, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION'
   })
-  sponsorss: sponsors[];
+  sponsors: sponsors[];
 
   @OneToMany(() => types, (types: types) => types.idRegion, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
-  typess: types[];
+  types: types[];
 
   @OneToMany(() => universities, (universities: universities) => universities.idRegion, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION'
   })
-  universitiess: universities[];
+  universities: universities[];
+
+  @OneToMany(() => points, (points: points) => points.idRegion, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
+  points: points[];
 }

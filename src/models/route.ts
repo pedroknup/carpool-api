@@ -7,7 +7,7 @@ export interface IRoute {
   origin: IPoint;
   destination: IPoint;
   route: IPoint[];
-  id: number;
+  id?: number;
 }
 
 

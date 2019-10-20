@@ -21,7 +21,7 @@ class RegionController {
 
       const regionsList = await regionsRepository.find({
         order: { name: 'ASC' },
-        relations: ['province']
+        relations: ['idProvince', 'destinations', 'points']
       });
 
       const historyRepository = getRepository(rides);
@@ -29,24 +29,40 @@ class RegionController {
       const ridesArray = await historyRepository.find({ relations: ['idUser', 'idRegion'] });
       const confirmedUsersArray = await confirmedUsersRepository.find({});
 
-      const mappedRegions = regionsList.map((item)=>
-      {
-        let quantityUsers = ridesArray.filter(function(item, pos) {
-          return ridesArray.indexOf(ridesArray.find(itemByDriver => item.idUser === itemByDriver.idUser)) === pos;
-        }).length;
-        let quantityRidesDriver = ridesArray.filter(function(item, pos) {
-          return item.confirmedUserss.length > 0;
-        }).length;
-        let quantityRidesUser = confirmedUsersArray.length;
-        if (item.id===1){
-          quantityRidesDriver += 5312;
-          quantityRidesUser += 6079 
-        } 
-        return { ...item, quantityUsers, quantityRidesDriver, quantityRidesUser }}
-      )
+      const mappedRegions = regionsList.map(item => {
+        try {
+          let quantityUsers = ridesArray.filter(function(item, pos) {
+            return ridesArray.indexOf(ridesArray.find(itemByDriver => item.idUser === itemByDriver.idUser)) === pos;
+          }).length;
+          let quantityRidesDriver = ridesArray.filter(function(item, pos) {
+            return item.confirmedUsers.length > 0;
+          }).length;
+          let quantityRidesUser = confirmedUsersArray.length;
+          if (item.id === 1) {
+            quantityRidesDriver += 5312;
+            quantityRidesUser += 6079;
+          }
+          const toReturn = { ...item, quantityUsers, quantityRidesDriver, quantityRidesUser };
+          console.log(toReturn);
+          return toReturn;
+        } catch {
+          let quantityRidesDriver = 0;
+          let quantityRidesUser = 0;
+          let quantityUsers = ridesArray.filter(function(item, pos) {
+            return ridesArray.indexOf(ridesArray.find(itemByDriver => item.idUser === itemByDriver.idUser)) === pos;
+          }).length;
+          if (item.id === 1) {
+            quantityRidesDriver += 5312;
+            quantityRidesUser += 6079;
+          }
+          const toReturn = { ...item, quantityUsers, quantityRidesDriver, quantityRidesUser };
+          return toReturn;
+        }
+      });
       //Send the users object
       res.send(mappedRegions);
     } catch (e) {
+      console.log(e);
       res.status(500).send(e);
       return;
     }

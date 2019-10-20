@@ -190,19 +190,19 @@ export class users {
     (preferences: preferences) => preferences.idUser,
     { onDelete: "NO ACTION", onUpdate: "NO ACTION" }
   )
-  preferencess: preferences[];
+  preferences: preferences[];
 
   @OneToMany(() => rides, (rides: rides) => rides.idUser, {
     onDelete: "NO ACTION",
     onUpdate: "NO ACTION"
   })
-  ridess: rides[];
+  rides: rides[];
 
   @OneToMany(() => routes, (routes: routes) => routes.idUser, {
     onDelete: "NO ACTION",
     onUpdate: "NO ACTION"
   })
-  routess: routes[];
+  routes: routes[];
 
   @OneToMany(() => sessions, (sessions: sessions) => sessions.idUser, {
     onDelete: "NO ACTION",
@@ -214,7 +214,7 @@ export class users {
     onDelete: "NO ACTION",
     onUpdate: "NO ACTION"
   })
-  warningss: warnings[];
+  warnings: warnings[];
 
   hashPassword() {
     this.password = bcrypt.hashSync(this.password, 8);

@@ -8,6 +8,7 @@ const router = Router();
 
 //Get rides by region
 router.get("/", [], RidesController.listByRegion);
+router.post('/', [], RidesController.newRide);
 
 
 

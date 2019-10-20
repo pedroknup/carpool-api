@@ -8,35 +8,67 @@ import config from '../config/config';
 import { users } from '../entity/users';
 import { removeAtt } from '../util/object';
 
+function sortByFrequency(array) {
+  var frequency = {};
+
+  array.forEach(function(value) {
+    frequency[value] = 0;
+  });
+
+  var uniques = array.filter(function(value) {
+    return ++frequency[value] == 1;
+  });
+
+  return uniques.sort(function(a, b) {
+    return frequency[b] - frequency[a];
+  });
+}
 class AuthController {
   static login = async (req: Request, res: Response) => {
     //Check if username and password are set
-    let { phone, password } = req.body;
-    if (!(phone && password)) {
-      res.status(400).send("Bad request");
+    let { fbtoken, igtoken } = req.body;
+    if (!(fbtoken || igtoken)) {
+      console.log(fbtoken);
+      res.status(400).send('Bad request');
+      return;
     }
 
     //Get user from database
     const userRepository = getRepository(users);
     let user: users;
     try {
-      user = await userRepository.findOneOrFail({ where: { phone } });
+      user = await userRepository.findOneOrFail({ where: { facebook_id: 123 }, relations: ['rides', 'routes'] });
     } catch (id) {
-      res.status(401).send("Usuário ou senha inválidos");
+      //not found
+      // TODO: redirect to sign user up
+      res.status(401).send('Usuário não encontrado');
       return;
     }
-    //Check if encrypted password match
-    if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-      res.status(401).send('Usuário ou senha inválidos');
-      return;
-    }
+    // //Check if encrypted password match
+    // if (!user.checkIfUnencryptedPasswordIsValid(password)) {
+    //   res.status(401).send('Usuário ou senha inválidos');
+    //   return;
+    // }
     user = removeAtt(user, ['password']);
 
     //Sing JWT, valid for 1 hour
-    const token = jwt.sign({ userId: user.id, phone: user.phone }, config.jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: '1h' });
 
     //Send the jwt in the response
-    res.send({ user, token });
+
+    let favPoints = [];
+    let favRoutes = [];
+    let rating = 4.6;
+    // TODO calculate rating
+    let newUserObj = { ...user, favPoints, favRoutes, rating };
+    try {
+      const arr = user.rides;
+      // res.send({ arr });
+      // return;
+      // arr.lastIndexOf(key) === idx).sort((a, b) => a < b ? -1 : 1);
+      //  const pointsUser = await userRepository.findOneOrFail(
+    } catch (err) {}
+    res.send({ user: newUserObj, token });
   };
 
   static changePassword = async (req: Request, res: Response) => {

@@ -1,32 +1,30 @@
-import { Request, Response } from "express";
-import { getRepository } from "typeorm";
-import { validate } from "class-validator";
+import { Request, Response } from 'express';
+import { getRepository } from 'typeorm';
+import { validate } from 'class-validator';
 
-import { User } from "../entity/User";
-import { rides } from "../entity/rides";
-import { getRegionById } from "../services/rides-service";
-import { IRoute } from "../models/route";
-import { getUserById } from "../services";
-
+import { User } from '../entity/User';
+import { rides } from '../entity/rides';
+import { getRegionById } from '../services/rides-service';
+import { IRoute } from '../models/route';
+import { getUserById } from '../services';
+import { routes } from '../entity/routes';
 
 class RideController {
   static listByRegion = async (req: Request, res: Response) => {
     //Get the ID from the url
-    const idRegionParam: number  = req.params.region;
+    const idRegionParam: number = req.params.region;
 
-    if (!idRegionParam){
-      res.status(403).send("Bad Request");
+    if (!idRegionParam) {
+      res.status(403).send('Bad Request');
     }
-    const foundRegion = getRegionById(idRegionParam)
+    const foundRegion = getRegionById(idRegionParam);
 
-    if (!foundRegion){
-      res.status(403).send("Região inexistente");
+    if (!foundRegion) {
+      res.status(403).send('Região inexistente');
     }
     //Get rides from database
     const ridesRepository = getRepository(rides);
-    const ridesList = await ridesRepository.find(
-      { where: { idRegion:  idRegionParam } }
-    );
+    const ridesList = await ridesRepository.find({ where: { idRegion: idRegionParam } });
 
     //Send the users object
     res.send(ridesList);
@@ -39,26 +37,37 @@ class RideController {
     //Get the ride from database
     const ridesRepository = getRepository(rides);
     try {
-      const ride = await ridesRepository.findOneOrFail({where: {id}});
+      const ride = await ridesRepository.findOneOrFail({ where: { id } });
       res.send(ride);
     } catch (error) {
-      res.status(404).send("Carona não encontrada");
+      res.status(404).send('Carona não encontrada');
     }
   };
 
   static newRide = async (req: Request, res: Response) => {
     //Get parameters from the body
-    let { time, type, spots, idUser, outgoing  }  = req.body;
-    let route : IRoute = req.body.route
+    let { time, type, spots, idUser, route, outgoing } = req.body.ride;
+    let token = req.body.token;
+    let regionId = req.body.regionId;
     const foundUser = await getUserById(idUser);
-    const rideRoute : IRoute = {
-      name: route.name,
-      user :foundUser,
-      origin: route.origin,
-      destination: route.destination,
-      route: route.route,
-      id: route.id
+
+    const rideRoute = new routes();
+    rideRoute.name = route.name;
+    rideRoute.idUser = idUser;
+    rideRoute.origin = route.origin;
+    rideRoute.idDestination = route.destination.id;
+    rideRoute.points = route.route;
+    rideRoute.idRegion = regionId;
+
+    if (route.shouldSave) {
+      const routeRepository = getRepository(routes);
+      console.log('To save' + JSON.stringify(rideRoute));
+      await routeRepository.save(rideRoute);
     }
+    const now = new Date();
+    const expirationTime: Date = time;
+    // expirationTime.setMinutes(expirationTime.getMinutes() + 25);
+    console.log('user' + idUser);
     let rideToAdd = new rides();
     rideToAdd.time = time;
     rideToAdd.type = type;
@@ -66,14 +75,14 @@ class RideController {
     rideToAdd.outgoing = outgoing;
     rideToAdd.idUser = idUser;
     rideToAdd.route = rideRoute;
+    rideToAdd.created_at = now;
+    rideToAdd.expires_at = now;
     //Validade if the parameters are ok
     const errors = await validate(rideToAdd);
     if (errors.length > 0) {
       res.status(400).send(errors);
       return;
     }
-
-   
 
     //Try to save. If fails, the username is already in use
     const ridesRepository = getRepository(rides);
@@ -85,7 +94,7 @@ class RideController {
     }
 
     //If all ok, send 201 response
-    res.status(201).send("Carona criada");
+    res.status(201).send('Carona criada');
   };
 
   // static editUser = async (req: Request, res: Response) => {
