@@ -8,7 +8,7 @@ import HomeController from '../controllers/HomeController';
 const router = Router();
 
 //Get rides by region
-router.get('/', [checkJwt, checkUser], HomeController.getMetaByUser);
+router.get('/:id([0-9]+)', [checkJwt, checkUser], HomeController.getMetaByUser);
 // router.post('/', [], RidesController.newRide);
 
 // //Delete one user
