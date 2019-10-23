@@ -91,6 +91,6 @@ export class destinations {
   })
   picture_small: string | null;
 
-  @OneToMany(() => routes, (routes: routes) => routes.idDestination, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
+  @OneToMany(() => routes, (routes: routes) => routes.destination, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
   routes: routes[];
 }

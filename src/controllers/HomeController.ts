@@ -54,7 +54,7 @@ class HomeController {
       try {
         user = await userRepository.findOneOrFail({
           where: { id: id },
-          relations: ['rides', 'routes', 'routes.idDestination']
+          relations: ['rides', 'routes', 'routes.destination']
         });
       } catch {
         res.status(401).send('Usuário não encontrado');

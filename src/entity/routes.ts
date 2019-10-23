@@ -19,7 +19,7 @@ import { regions } from './regions';
 import { route_points } from './route_points';
 
 @Entity('routes', { schema: 'caronapp_bd' })
-@Index('id_destination_idx', ['idDestination'])
+@Index('id_destination_idx', ['destination'])
 @Index('id_user_idx', ['idUser'])
 @Index('id_region_idx', ['idRegion'])
 export class routes {
@@ -50,7 +50,7 @@ export class routes {
     onUpdate: 'NO ACTION'
   })
   @JoinColumn({ name: 'id_destination' })
-  idDestination: destinations | null;
+  destination: destinations | null;
 
   @Column('json', {
     nullable: false,
