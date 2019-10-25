@@ -1,9 +1,10 @@
 import {BaseEntity,Column,Entity,Index,JoinColumn,JoinTable,ManyToMany,ManyToOne,OneToMany,OneToOne,PrimaryColumn,PrimaryGeneratedColumn,RelationId} from "typeorm";
+import { users } from './users';
 
 
 @Entity('pendent_users', { schema: 'caronapp_bd' })
 @Index('id_ride_idx', ['id_ride'])
-@Index('id_user_idx', ['id_user'])
+@Index('id_user_idx', ['user'])
 export class pendent_users {
   @PrimaryGeneratedColumn({
     type: 'int',
@@ -17,11 +18,13 @@ export class pendent_users {
   })
   id_ride: number;
 
-  @Column('int', {
+  @ManyToOne(() => users, (users: users) => users.pendentUsers, {
     nullable: false,
-    name: 'id_user'
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION'
   })
-  id_user: number;
+  @JoinColumn({ name: 'id_user' })
+  user: users | null;
 
   @Column('int', {
     nullable: true,
@@ -42,9 +45,9 @@ export class pendent_users {
   id_route_point: number;
 
   @Column('varchar', {
-    nullable: false,
+    nullable: true,
     length: 45,
     name: 'message'
   })
-  message: string;
+  message: string | null;
 }

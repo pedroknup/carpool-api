@@ -18,7 +18,7 @@ import { rides } from './rides';
 
 @Entity('confirmed_users', { schema: 'caronapp_bd' })
 @Index('id_ride_idx', ['idRide'])
-@Index('id_user_idx', ['idUser'])
+@Index('id_user_idx', ['user'])
 export class confirmed_users {
   @PrimaryGeneratedColumn({
     type: 'int',
@@ -26,13 +26,13 @@ export class confirmed_users {
   })
   id: number;
 
-  @ManyToOne(() => users, (users: users) => users.confirmedUserss, {
+  @ManyToOne(() => users, (users: users) => users.confirmedUsers, {
     nullable: false,
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION'
   })
   @JoinColumn({ name: 'id_user' })
-  idUser: users | null;
+  user: users | null;
 
   @Column('json', {
     nullable: false,
@@ -44,7 +44,7 @@ export class confirmed_users {
     nullable: false,
     name: 'time'
   })
-  time: string;
+  time: Date;
 
   @ManyToOne(() => rides, (rides: rides) => rides.confirmedUsers, {
     nullable: false,

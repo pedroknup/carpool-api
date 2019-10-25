@@ -24,6 +24,7 @@ import { routes } from "./routes";
 import { sessions } from "./sessions";
 import { warnings } from "./warnings";
 import * as bcrypt from "bcryptjs";
+import { pendent_users } from './pendent_users';
 
 @Entity("users", { schema: "caronapp_bd" })
 export class users {
@@ -167,12 +168,19 @@ export class users {
 
   @OneToMany(
     () => confirmed_users,
-    (confirmed_users: confirmed_users) => confirmed_users.idUser,
+    (confirmed_users: confirmed_users) => confirmed_users.user,
     { onDelete: "NO ACTION", onUpdate: "NO ACTION" }
   )
-  confirmedUserss: confirmed_users[];
+  confirmedUsers: confirmed_users[];
+  
+  @OneToMany(
+    () => pendent_users,
+    (pendent_users: pendent_users) => pendent_users.user,
+    { onDelete: "NO ACTION", onUpdate: "NO ACTION" }
+  )
+  pendentUsers: pendent_users[];
 
-  @OneToMany(() => messages, (messages: messages) => messages.idUser, {
+  @OneToMany(() => messages, (messages: messages) => messages.user, {
     onDelete: "NO ACTION",
     onUpdate: "NO ACTION"
   })
@@ -192,7 +200,7 @@ export class users {
   )
   preferences: preferences[];
 
-  @OneToMany(() => rides, (rides: rides) => rides.idUser, {
+  @OneToMany(() => rides, (rides: rides) => rides.user, {
     onDelete: "NO ACTION",
     onUpdate: "NO ACTION"
   })

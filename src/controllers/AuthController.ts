@@ -28,16 +28,15 @@ class AuthController {
     //Check if username and password are set
     let { fbtoken, igtoken } = req.body;
     if (!(fbtoken || igtoken)) {
-      console.log(fbtoken);
       res.status(400).send('Bad request');
       return;
     }
-
+    console.log(fbtoken)
     //Get user from database
     const userRepository = getRepository(users);
     let user: users;
     try {
-      user = await userRepository.findOneOrFail({ where: { facebook_id: 123 } });
+      user = await userRepository.findOneOrFail({ where: { facebook_id: fbtoken } });
     } catch (id) {
       //not found
       // TODO: redirect to sign user up

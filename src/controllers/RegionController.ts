@@ -26,13 +26,13 @@ class RegionController {
 
       const historyRepository = getRepository(rides);
       const confirmedUsersRepository = getRepository(confirmed_users);
-      const ridesArray = await historyRepository.find({ relations: ['idUser', 'idRegion'] });
+      const ridesArray = await historyRepository.find({ relations: ['user', 'idRegion'] });
       const confirmedUsersArray = await confirmedUsersRepository.find({});
 
       const mappedRegions = regionsList.map(item => {
         try {
           let quantityUsers = ridesArray.filter(function(item, pos) {
-            return ridesArray.indexOf(ridesArray.find(itemByDriver => item.idUser === itemByDriver.idUser)) === pos;
+            return ridesArray.indexOf(ridesArray.find(itemByDriver => item.user === itemByDriver.user)) === pos;
           }).length;
           let quantityRidesDriver = ridesArray.filter(function(item, pos) {
             return item.confirmedUsers.length > 0;
@@ -49,7 +49,7 @@ class RegionController {
           let quantityRidesDriver = 0;
           let quantityRidesUser = 0;
           let quantityUsers = ridesArray.filter(function(item, pos) {
-            return ridesArray.indexOf(ridesArray.find(itemByDriver => item.idUser === itemByDriver.idUser)) === pos;
+            return ridesArray.indexOf(ridesArray.find(itemByDriver => item.user === itemByDriver.user)) === pos;
           }).length;
           if (item.id === 1) {
             quantityRidesDriver += 5312;

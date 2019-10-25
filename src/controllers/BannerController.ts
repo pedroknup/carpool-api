@@ -21,24 +21,6 @@ class BannerController {
         order: { order: 'ASC' }
       });
       res.send(banners);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      
     } catch {
       res.send(500);
     }

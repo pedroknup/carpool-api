@@ -14,7 +14,7 @@ export class warnings {
         
 
    
-    @ManyToOne(()=>users, (users: users)=>users.warningss,{  nullable:false,onDelete: 'NO ACTION',onUpdate: 'NO ACTION' })
+    @ManyToOne(()=>users, (users: users)=>users.warnings,{  nullable:false,onDelete: 'NO ACTION',onUpdate: 'NO ACTION' })
     @JoinColumn({ name:'id_user'})
     idUser:users | null;
 

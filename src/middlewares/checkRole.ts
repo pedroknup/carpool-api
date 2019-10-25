@@ -38,10 +38,6 @@ export const checkUser = () => {
       res.status(401).send();
     }
 
-    res.setHeader('user', "lol");
-    // //Check if array of authorized roles includes the user's role
-    // if (roles.indexOf(user.role) > -1) next();
-    // else res.status(401).send();
     next();
   };
 };

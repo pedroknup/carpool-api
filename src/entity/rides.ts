@@ -17,10 +17,11 @@ import { users } from './users';
 import { regions } from './regions';
 import { confirmed_users } from './confirmed_users';
 import { messages } from './messages';
+import { pendent_users } from './pendent_users';
 
 @Entity('rides', { schema: 'caronapp_bd' })
 @Index('id_region_idx', ['idRegion'])
-@Index('id_user_idx', ['idUser'])
+@Index('id_user_idx', ['user'])
 export class rides {
   @PrimaryGeneratedColumn({
     type: 'int',
@@ -52,6 +53,12 @@ export class rides {
     name: 'type'
   })
   type: string | null;
+  @Column('varchar', {
+    nullable: true,
+    length: 45,
+    name: 'description'
+  })
+  description: string | null;
 
   @ManyToOne(() => users, (users: users) => users.rides, {
     nullable: false,
@@ -59,7 +66,7 @@ export class rides {
     onUpdate: 'NO ACTION'
   })
   @JoinColumn({ name: 'id_user' })
-  idUser: users | null;
+  user: users | null;
 
   @Column('json', {
     nullable: false,
@@ -92,6 +99,11 @@ export class rides {
     onUpdate: 'NO ACTION'
   })
   confirmedUsers: confirmed_users[];
+  @OneToMany(() => pendent_users, (pendent_users: pendent_users) => pendent_users.id_ride, {
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION'
+  })
+  pendentUsers: pendent_users[];
 
   @OneToMany(() => messages, (messages: messages) => messages.idRide, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
   messages: messages[];

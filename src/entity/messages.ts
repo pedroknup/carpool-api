@@ -17,7 +17,7 @@ import { rides } from './rides';
 import { users } from './users';
 
 @Entity('messages', { schema: 'caronapp_bd' })
-@Index('id_user_idx', ['idUser'])
+@Index('id_user_idx', ['user'])
 @Index('id_ride_idx', ['idRide'])
 export class messages {
   @PrimaryGeneratedColumn({
@@ -40,7 +40,7 @@ export class messages {
     onUpdate: 'NO ACTION'
   })
   @JoinColumn({ name: 'id_user' })
-  idUser: users | null;
+  user: users | null;
 
   @Column('varchar', {
     nullable: false,
