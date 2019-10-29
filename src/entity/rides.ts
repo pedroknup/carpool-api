@@ -105,6 +105,6 @@ export class rides {
   })
   pendentUsers: pendent_users[];
 
-  @OneToMany(() => messages, (messages: messages) => messages.idRide, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
+  @OneToMany(() => messages, (messages: messages) => messages.ride, { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
   messages: messages[];
 }

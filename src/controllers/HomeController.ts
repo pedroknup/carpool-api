@@ -98,7 +98,7 @@ class HomeController {
       for (let i = 0; i < userRides.length; i++) {
         const ride = userRides[i];
         const taskMessages = async () => {
-          let messagesList = await messagesRepository.find({ where: { idRide: ride.id }, relations: ['user'] });
+          let messagesList = await messagesRepository.find({ where: { ride: ride.id }, relations: ['user'] });
           messagesList = messagesList.map(item => {
             return { ...item, isAuthor: item.user.id === id };
           });

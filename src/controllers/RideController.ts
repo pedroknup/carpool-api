@@ -59,7 +59,7 @@ class RideController {
       const ride = ridesList[i];
       const newRide = { ...ride };
       if (ride.user.id === idUser) {
-        newRide.messages = await messagesRepository.find({ where: { idRide: newRide.id } });
+        newRide.messages = await messagesRepository.find({ where: { ride: newRide.id } });
         newRide.confirmedUsers = await confirmedRepository.find({
           where: { id_ride: newRide.id },
           relations: ['user']
@@ -76,7 +76,7 @@ class RideController {
         } else {
           const foundConfirmed = confirmedUsers.find(confirmed => confirmed.idRide.id === newRide.id);
           if (foundConfirmed) {
-            newRide.messages = await messagesRepository.find({ where: { idRide: newRide.id } });
+            newRide.messages = await messagesRepository.find({ where: { ride: newRide.id } });
             mappedList.push({ ...newRide, isActive: true });
           } else {
             if (newRide.time > now) mappedList.push({ ...newRide });

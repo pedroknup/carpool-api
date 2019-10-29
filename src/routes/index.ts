@@ -5,6 +5,7 @@ import ride from './ride';
 import region from './region';
 import home from './home';
 import banner from './banner';
+import chat from './chat';
 
 const routes = Router();
 
@@ -12,6 +13,7 @@ routes.use('/auth', auth);
 routes.use('/user', user);
 routes.use('/ride', ride);
 routes.use('/home', home);
+routes.use('/chat', chat);
 routes.use('/banner', banner);
 routes.use('/region', region);
 

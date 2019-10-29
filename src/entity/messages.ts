@@ -18,7 +18,7 @@ import { users } from './users';
 
 @Entity('messages', { schema: 'caronapp_bd' })
 @Index('id_user_idx', ['user'])
-@Index('id_ride_idx', ['idRide'])
+@Index('id_ride_idx', ['ride'])
 export class messages {
   @PrimaryGeneratedColumn({
     type: 'int',
@@ -32,7 +32,7 @@ export class messages {
     onUpdate: 'NO ACTION'
   })
   @JoinColumn({ name: 'id_ride' })
-  idRide: rides | null;
+  ride: rides | null;
 
   @ManyToOne(() => users, (users: users) => users.messagess, {
     nullable: false,
