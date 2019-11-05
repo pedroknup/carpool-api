@@ -87,54 +87,35 @@ class HomeController {
       });
 
       const newUser = { ...user };
-
-      const mappedList = [];
-      const messagesRepository = getRepository(messages);
-      const pendentRepository = getRepository(pendent_users);
-      const confirmedRepository = getRepository(confirmed_users);
       const ridesRepository = getRepository(rides);
-      const userRides = await ridesRepository.find({ where: { user: user, idRegion: idRegion } });
-      const promisses: Promise<void>[] = [];
-      for (let i = 0; i < userRides.length; i++) {
-        const ride = userRides[i];
-        const taskMessages = async () => {
-          let messagesList = await messagesRepository.find({ where: { ride: ride.id }, relations: ['user'] });
-          messagesList = messagesList.map(item => {
-            return { ...item, isAuthor: item.user.id === id };
-          });
-          ride.messages = messagesList;
-        };
-        const taskConfirmed = async () => {
-          ride.confirmedUsers = await confirmedRepository.find({
-            where: { id_ride: ride.id },
-            relations: ['user']
-          });
-        };
-        const taskPendent = async () => {
-          ride.pendentUsers = (await pendentRepository.find({
-            where: { id_ride: ride.id },
-            relations: ['user']
-          })).map(item => {
-            const routeObj = JSON.parse(JSON.stringify(ride.route));
-            let pointFound = routeObj.points.find(point => point.id === item.id_route_point);
-            if (!pointFound) {
-              pointFound = routeObj.origin.id === item.id_route_point ? routeObj.origin : null;
+      const userRides = await ridesRepository.find({
+        where: { user: user, idRegion: idRegion },
+        relations: ['confirmedUsers', 'confirmedUsers.user', 'pendentUsers', 'messages', 'messages.user']
+      });
+
+      //! TODO: optimize output (map)
+
+      newUser.rides = userRides.map(item => {
+        return {
+          ...item,
+          messages: item.messages.map(message=>({
+            ...message,
+            isAuthor: message.user.id == user.id
+          })),
+          isDriver: true,
+          isActive: true,
+          confirmedUsers: item.confirmedUsers.map(confirmed => {
+            const route = JSON.parse(JSON.stringify(item.route));
+            let foundPoint = route.points.find(point => point.id === confirmed.id_route_point);
+            if (!foundPoint) {
+              if (route.origin.id === confirmed.id_route_point) foundPoint = route.origin;
+              else if (route.destination.id === confirmed.id_route_point) foundPoint = route.destination;
             }
-
-            return { ...item, point: pointFound };
-          });
+            if (foundPoint) return { ...confirmed, point: foundPoint };
+            else return null;
+          })
         };
-
-        const finalPromise = async () => {
-          await Promise.all([taskMessages(), taskConfirmed(), taskPendent()]);
-          mappedList.push({ ...ride, isDriver: true, isActive: true });
-        };
-
-        promisses.push(finalPromise());
-      }
-      await Promise.all(promisses);
-
-      newUser.rides = mappedList;
+      });
       const [userRoutes, typesList] = await Promise.all([routesQuery, typesListQuery]);
       newUser.routes = userRoutes;
       res.send({

@@ -8,7 +8,9 @@ const router = Router();
 
 //Get rides by region
 router.get('/:id([0-9]+)', [checkJwt, checkUser], RidesController.listByRegion);
+router.get('/find/:id([0-9]+)', [checkJwt, checkUser], RidesController.getRide);
 router.post('/:id([0-9]+)', [checkJwt, checkUser], RidesController.sendRequest);
+router.post('/confirm/:id([0-9]+)', [checkJwt, checkUser], RidesController.confirmRequest);
 router.post('/', [], RidesController.newRide);
 
 

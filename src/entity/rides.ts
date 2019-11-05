@@ -94,12 +94,13 @@ export class rides {
   })
   created_at: Date;
 
-  @OneToMany(() => confirmed_users, (confirmed_users: confirmed_users) => confirmed_users.idRide, {
+  @OneToMany(() => confirmed_users, (confirmed_users: confirmed_users) => confirmed_users.ride, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION'
   })
   confirmedUsers: confirmed_users[];
-  @OneToMany(() => pendent_users, (pendent_users: pendent_users) => pendent_users.id_ride, {
+
+  @OneToMany(() => pendent_users, (pendent_users: pendent_users) => pendent_users.ride, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION'
   })

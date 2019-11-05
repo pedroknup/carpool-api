@@ -17,7 +17,7 @@ import { users } from './users';
 import { rides } from './rides';
 
 @Entity('confirmed_users', { schema: 'caronapp_bd' })
-@Index('id_ride_idx', ['idRide'])
+@Index('id_ride_idx', ['ride'])
 @Index('id_user_idx', ['user'])
 export class confirmed_users {
   @PrimaryGeneratedColumn({
@@ -34,11 +34,11 @@ export class confirmed_users {
   @JoinColumn({ name: 'id_user' })
   user: users | null;
 
-  @Column('json', {
+  @Column('int', {
     nullable: false,
-    name: 'point'
+    name: 'id_route_point'
   })
-  point: object;
+  id_route_point: number;
 
   @Column('time', {
     nullable: false,
@@ -52,7 +52,7 @@ export class confirmed_users {
     onUpdate: 'NO ACTION'
   })
   @JoinColumn({ name: 'id_ride' })
-  idRide: rides | null;
+  ride: rides | null;
 
   @Column('int', {
     nullable: true,

@@ -12,6 +12,8 @@ import { pendent_users } from '../entity/pendent_users';
 import { users } from '../entity/users';
 import { confirmed_users } from '../entity/confirmed_users';
 import { messages } from '../entity/messages';
+import { IConfirmedUser } from '../models/confirmed-user';
+import { TIME_TOLERANCE } from '../constants/index';
 
 class RideController {
   static listByRegion = async (req: Request, res: Response) => {
@@ -62,19 +64,19 @@ class RideController {
         newRide.messages = await messagesRepository.find({ where: { ride: newRide.id } });
         newRide.confirmedUsers = await confirmedRepository.find({
           where: { id_ride: newRide.id },
-          relations: ['user']
+          relations: ['user', 'ride']
         });
         newRide.pendentUsers = await pendentRepository.find({
           where: { id_ride: newRide.id },
-          relations: ['user']
+          relations: ['user', 'ride']
         });
         mappedList.push({ ...newRide, isDriver: true, isActive: true });
       } else {
-        const foundPendent = pendentUsers.find(pendent => pendent.id_ride === newRide.id);
+        const foundPendent = pendentUsers.find(pendent => pendent.ride.id === newRide.id);
         if (foundPendent) {
           mappedList.push({ ...newRide, isPendent: true });
         } else {
-          const foundConfirmed = confirmedUsers.find(confirmed => confirmed.idRide.id === newRide.id);
+          const foundConfirmed = confirmedUsers.find(confirmed => confirmed.ride.id === newRide.id);
           if (foundConfirmed) {
             newRide.messages = await messagesRepository.find({ where: { ride: newRide.id } });
             mappedList.push({ ...newRide, isActive: true });
@@ -87,6 +89,76 @@ class RideController {
 
     res.send(mappedList);
     //Send the users object
+  };
+
+  static getRide = async (req: Request, res: Response) => {
+    try {
+      const idRide: number = req.params.id;
+      const ridesRepository = getRepository(rides);
+      const idUser = res.locals.jwtPayload.userId;
+      let ride: rides;
+      try {
+        ride = await ridesRepository.findOneOrFail({
+          where: { id: idRide },
+          relations: ['user','confirmedUsers', 'confirmedUsers.user', 'pendentUsers', 'messages', 'messages.user']
+        });
+      } catch (err) {
+        res.status(402).send('Carona não encontrada');
+        return;
+      }
+
+      let user: users;
+      try {
+        const userRepository = getRepository(users);
+        user = await userRepository.findOneOrFail({
+          where: { id: idUser }
+        });
+      } catch (err) {
+        res.status(401).send('Você foi desconectado.');
+        return;
+      }
+
+      const mappedRide = {
+        ...ride,
+        messages: ride.messages.map(message => ({
+          ...message,
+          isAuthor: message.user.id == user.id
+        })),
+        isDriver: true,
+        isActive: true,
+        confirmedUsers: ride.confirmedUsers.map(confirmed => {
+          const route = JSON.parse(JSON.stringify(ride.route));
+          let foundPoint = route.points.find(point => point.id === confirmed.id_route_point);
+          if (!foundPoint) {
+            if (route.origin.id === confirmed.id_route_point) foundPoint = route.origin;
+            else if (route.destination.id === confirmed.id_route_point) foundPoint = route.destination;
+          }
+          if (foundPoint) return { ...confirmed, point: foundPoint };
+          else return null;
+        })
+      };
+
+      const timeLimit = new Date(ride.time);
+      timeLimit.setMinutes(timeLimit.getMinutes() + TIME_TOLERANCE);
+      if (timeLimit >= new Date()) {
+        res.status(402).send('Essa carona expirou.');
+        return;
+      }
+
+      let isUserInTheRide = false;
+      if (ride.user.id === user.id) isUserInTheRide = true;
+      else if (ride.confirmedUsers.find(item => item.user.id === user.id)) isUserInTheRide = true;
+      if (!isUserInTheRide) {
+        res.status(402).send('Você não está nesta carona');
+        return;
+      }
+
+      res.status(200).send(mappedRide);
+      return;
+    } catch(e) {
+      res.status(500).send('Erro interno no servidor' + e);
+      return;
+    }
   };
 
   static sendRequest = async (req: Request, res: Response) => {
@@ -177,6 +249,132 @@ class RideController {
       await pendentUsersRepository.save(request);
       res.status(200).send('Sucesso');
     } catch {
+      res.status(500).send('Erro interno no servidor. Por favor, tente novamente mais tarde');
+      return;
+    }
+  };
+
+  static confirmRequest = async (req: Request, res: Response) => {
+    //Get the ID from the url
+    const idRequest: number = req.params.id;
+    const ridesRepository = getRepository(rides);
+    const requestsRepository = getRepository(pendent_users);
+    const idUser = res.locals.jwtPayload.userId;
+    let requestRide: pendent_users;
+    try {
+      requestRide = await requestsRepository.findOneOrFail({
+        where: { id: idRequest },
+        relations: ['user', 'ride']
+      });
+    } catch (err) {
+      res.status(402).send('Essa solicitação não existe mais ou expirou');
+      return;
+    }
+    let ride: rides;
+    try {
+      ride = await ridesRepository.findOneOrFail({
+        where: { id: requestRide.ride.id },
+        relations: ['user']
+      });
+    } catch (err) {
+      res.status(402).send('Carona não encontrada');
+      return;
+    }
+
+    if (ride.spots < requestRide.quantity) {
+      res.status(403).send('Esta carona possui menos vagas que o solicitado.');
+      return;
+    }
+    ///! TODO: DEV PURPOSES
+    // if (ride.expires_at <= new Date()) {
+    //   res.status(402).send('Esta carona expirou');
+    //   return;
+    // }
+
+    const confirmedRepository = getRepository(confirmed_users);
+    try {
+      const confirmedMatches = await confirmedRepository.find({
+        where: { user: requestRide.user.id },
+        relations: ['ride']
+      });
+      confirmedMatches.forEach(item => {
+        const now = new Date();
+        if (item.ride.expires_at <= now) {
+          res.status(402).send(`Este caroneiro já foi confirmado em outra carona.`);
+          requestsRepository
+            .createQueryBuilder()
+            .delete()
+            .from(pendent_users)
+            .where('id = :id', { id: idRequest })
+            .execute();
+          return;
+        }
+      });
+    } catch {
+      res.status(500).send('Erro interno no servidor. Por favor, tente novamente mais tarde.');
+      return;
+    }
+    let { time } = req.body;
+    if (!time) {
+      res.status(403).send('É obrigatório informar o horário ao confirmar uma carona.');
+      return;
+    }
+    let timeParsed: Date;
+    try {
+      timeParsed = new Date(time);
+    } catch {
+      res.status(403).send('Erro ao converter o campo Data');
+      return;
+    }
+    // if (time <= new Date() || time >= ride.time) {
+    //   res.status(402).send('Horário inválido');
+    //   return;
+    // }
+
+    const userRepository = getRepository(users);
+    let user: users;
+    try {
+      user = await userRepository.findOneOrFail({
+        where: { id: idUser }
+      });
+    } catch (err) {
+      res.status(401).send('Você foi desconectado.');
+      return;
+    }
+
+    if (user.id != ride.user.id) {
+      res.status(402).send('Você não pode confirmar/cancelar caroneiros em uma carona que não é sua!');
+      return;
+    }
+    const finalTime = new Date();
+    finalTime.setDate(ride.time.getDate());
+    finalTime.setMonth(ride.time.getMonth());
+    finalTime.setFullYear(ride.time.getFullYear());
+    finalTime.setHours(timeParsed.getHours());
+    finalTime.setMinutes(timeParsed.getMinutes());
+    console.log('idUser:' + requestRide.user.id);
+    const confirmed = {
+      ride,
+      user: requestRide.user,
+      id_route_point: requestRide.id_route_point,
+      quantity: requestRide.quantity,
+      time: finalTime,
+      created_at: new Date()
+    };
+
+    requestsRepository
+      .createQueryBuilder()
+      .delete()
+      .from(pendent_users)
+      .where('id = :id', { id: idRequest })
+      .execute();
+    try {
+      const newSpots = ride.spots - confirmed.quantity;
+      await ridesRepository.update(ride.id, { spots: newSpots });
+      await confirmedRepository.save(confirmed);
+      res.status(200).send('Sucesso');
+    } catch (e) {
+      console.log(e);
       res.status(500).send('Erro interno no servidor. Por favor, tente novamente mais tarde');
       return;
     }
