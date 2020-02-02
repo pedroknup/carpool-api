@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getRepository, MoreThan, Equal } from 'typeorm';
+import { getRepository, MoreThan, Equal, Between } from 'typeorm';
 import { validate } from 'class-validator';
 
 import { User } from '../entity/User';
@@ -14,7 +14,8 @@ import { confirmed_users } from '../entity/confirmed_users';
 import { messages } from '../entity/messages';
 import { IConfirmedUser } from '../models/confirmed-user';
 import { TIME_TOLERANCE } from '../constants/index';
-
+import { isRideExpired } from '../util/ride';
+const moment = require('moment');
 class RideController {
   static listByRegion = async (req: Request, res: Response) => {
     //Get the ID from the url
@@ -60,7 +61,7 @@ class RideController {
     for (let i = 0; i < ridesList.length; i++) {
       const ride = ridesList[i];
       const newRide = { ...ride };
-      if (ride.user.id === idUser) {
+      if (ride.user.id == idUser) {
         newRide.messages = await messagesRepository.find({ where: { ride: newRide.id } });
         newRide.confirmedUsers = await confirmedRepository.find({
           where: { id_ride: newRide.id },
@@ -100,7 +101,7 @@ class RideController {
       try {
         ride = await ridesRepository.findOneOrFail({
           where: { id: idRide },
-          relations: ['user','confirmedUsers', 'confirmedUsers.user', 'pendentUsers', 'messages', 'messages.user']
+          relations: ['user', 'confirmedUsers', 'confirmedUsers.user', 'pendentUsers', 'messages', 'messages.user']
         });
       } catch (err) {
         res.status(402).send('Carona não encontrada');
@@ -138,9 +139,7 @@ class RideController {
         })
       };
 
-      const timeLimit = new Date(ride.time);
-      timeLimit.setMinutes(timeLimit.getMinutes() + TIME_TOLERANCE);
-      if (timeLimit >= new Date()) {
+      if (isRideExpired(ride)) {
         res.status(402).send('Essa carona expirou.');
         return;
       }
@@ -155,7 +154,7 @@ class RideController {
 
       res.status(200).send(mappedRide);
       return;
-    } catch(e) {
+    } catch (e) {
       res.status(500).send('Erro interno no servidor' + e);
       return;
     }
@@ -252,6 +251,65 @@ class RideController {
       res.status(500).send('Erro interno no servidor. Por favor, tente novamente mais tarde');
       return;
     }
+  };
+  static UpdateRideSpots = async (req: Request, res: Response) => {
+    //Get the ID from the url
+    const idRide: number = req.params.id;
+    let { spots } = req.body;
+    if (!idRide || spots === undefined || spots < 0) {
+      console.log(req.body);
+      res.status(403).send('Bad Request');
+      return;
+    }
+    const ridesRepository = getRepository(rides);
+
+    const idUser = res.locals.jwtPayload.userId;
+    let ride: rides;
+    try {
+      ride = await ridesRepository.findOneOrFail({
+        where: { id: idRide },
+        relations: ['user', 'confirmedUsers']
+      });
+    } catch (err) {
+      res.status(402).send('Carona não encontrada');
+      return;
+    }
+    const totalConfirmed = ride.confirmedUsers.reduce((a, b) => a + b.quantity, 0);
+
+    const userRepository = getRepository(users);
+    let user: users;
+    try {
+      user = await userRepository.findOneOrFail({
+        where: { id: idUser }
+      });
+    } catch (err) {
+      res.status(401).send('Você foi desconectado.');
+      return;
+    }
+
+    if (ride.user.id != idUser) {
+      res.status(402).send(`Essa carona não é sua!`);
+      return;
+    }
+    if (spots + totalConfirmed >= 5) {
+      res.status(400).send(`Número de vagas disponíveis inválido. Escolha um número menor que ${5 - totalConfirmed}`);
+      return;
+    }
+    if (ride.expires_at <= new Date()) {
+      res.status(402).send('Esta carona expirou');
+      return;
+    }
+
+    ridesRepository
+      .update(ride.id, { spots: spots })
+      .then(() => {
+        res.status(200).send('Sucesso');
+        return;
+      })
+      .catch(() => {
+        res.status(500).send('Erro interno no servidor. Por favor, tente novamente mais tarde.');
+        return;
+      });
   };
 
   static confirmRequest = async (req: Request, res: Response) => {
@@ -424,7 +482,6 @@ class RideController {
 
     if (route.shouldSave) {
       const routeRepository = getRepository(routes);
-      console.log('To save' + JSON.stringify(rideRoute));
       await routeRepository.save(rideRoute);
     }
     if (!!!timeParsed) {
@@ -451,17 +508,36 @@ class RideController {
       return;
     }
 
-    //Try to save. If fails, the username is already in use
     const ridesRepository = getRepository(rides);
     try {
-      await ridesRepository.save(rideToAdd);
+      //TODO: Check if user is in another ride in the same time
+      const timeMore10Minutes = new Date(timeParsed);
+      timeMore10Minutes.setMinutes(timeMore10Minutes.getMinutes() + 15);
+
+      const userRides = await ridesRepository.find({ where: { user: idUser } });
+      const activeRides = userRides.filter(item=>{
+        return !isRideExpired(item);
+      })
+      if (activeRides.length > 5) {
+        res
+          .status(400)
+          .send(
+            'Você atingiu o limite de caronas simultaneamente ofertadas. Tente novamente quando você tiver menos que 5 caronas ativas.'
+          );
+        return;
+      } else {
+        const rideSameTime = await ridesRepository.find({ where: { time: Between(timeParsed, timeMore10Minutes) } });
+        if (rideSameTime.length > 0) {
+          res.status(400).send('Você já tem uma carona ofertada nesse horário (tolerância de 10 minutos).');
+        } else {
+          await ridesRepository.save(rideToAdd);
+          res.status(200).send('Carona criada');
+        }
+      }
     } catch (e) {
       res.status(409).send(e);
       return;
     }
-
-    //If all ok, send 201 response
-    res.status(201).send('Carona criada');
   };
 
   // static editUser = async (req: Request, res: Response) => {

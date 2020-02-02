@@ -16,6 +16,7 @@ import { points } from '../entity/points';
 import { messages } from '../entity/messages';
 import { pendent_users } from '../entity/pendent_users';
 import { confirmed_users } from '../entity/confirmed_users';
+import { isRideExpired } from '../util/ride';
 
 class HomeController {
   static getMetaByRegion = async (req: Request, res: Response) => {
@@ -94,11 +95,13 @@ class HomeController {
       });
 
       //! TODO: optimize output (map)
-
-      newUser.rides = userRides.map(item => {
+      newUser.rides = userRides.filter(item => {
+        return !isRideExpired(item);
+      });
+      newUser.rides = newUser.rides.map(item => {
         return {
           ...item,
-          messages: item.messages.map(message=>({
+          messages: item.messages.map(message => ({
             ...message,
             isAuthor: message.user.id == user.id
           })),
