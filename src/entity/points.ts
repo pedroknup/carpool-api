@@ -94,10 +94,4 @@ export class points {
     onUpdate: 'NO ACTION'
   })
   preferences: preferences[];
-
-  @OneToMany(() => route_points, (route_points: route_points) => route_points.idPoint, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION'
-  })
-  routePoints: route_points[];
 }

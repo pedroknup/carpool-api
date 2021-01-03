@@ -455,6 +455,7 @@ class RideController {
   static newRide = async (req: Request, res: Response) => {
     //Get parameters from the body
     let { time, type, spots, idUser, route, outgoing, description } = req.body.ride;
+    console.log("ride", req.body.regionId)
     let regionId = req.body.regionId;
     const rideRoute = new routes();
     rideRoute.name = route.name;

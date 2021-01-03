@@ -71,10 +71,4 @@ export class routes {
     name: 'points'
   })
   points: object | null;
-
-  @OneToMany(() => route_points, (route_points: route_points) => route_points.idRoute, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION'
-  })
-  routePoints: route_points[];
 }
