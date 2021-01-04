@@ -20,6 +20,7 @@ class BannerController {
         where: [{ idRegion: id }, { idRegion: null }],
         order: { order: 'ASC' }
       });
+      console.log("banners", banners)
       res.send(banners);
     } catch {
       res.send(500);

@@ -502,6 +502,7 @@ class RideController {
     rideToAdd.user = idUser;
     rideToAdd.route = rideRoute;
     rideToAdd.created_at = now;
+    rideToAdd.idRegion = regionId;
     rideToAdd.expires_at = expirationTime;
     const errors = await validate(rideToAdd);
     if (errors.length > 0) {
